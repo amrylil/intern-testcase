@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -19,63 +20,71 @@ import { User } from './entities/user.entity';
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
+  private readonly logger = new Logger(UsersController.name);
+
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Membuat user baru' })
+  @ApiOperation({ summary: 'Create a new user' })
   @ApiBody({ type: CreateUserDto })
   @ApiResponse({
     status: 201,
-    description: 'User berhasil dibuat.',
+    description: 'User created successfully.',
     type: User,
   })
-  @ApiResponse({ status: 400, description: 'Input tidak valid.' })
-  @ApiResponse({ status: 409, description: 'Email atau username sudah ada.' })
+  @ApiResponse({ status: 400, description: 'Invalid input.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Email or username already exists.',
+  })
   create(@Body() createUserDto: CreateUserDto): Promise<User> {
+    this.logger.log(
+      `[POST /users] Request received to create user: ${createUserDto.email}`,
+    );
     return this.usersService.create(createUserDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Mendapatkan semua data user' })
-  @ApiResponse({
-    status: 200,
-    description: 'List semua user.',
-    type: [User],
-  })
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({ status: 200, description: 'List of all users.', type: [User] })
   findAll(): Promise<User[]> {
+    this.logger.log(`[GET /users] Request received to get all users`);
     return this.usersService.findAll();
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Mendapatkan data user berdasarkan ID' })
-  @ApiResponse({ status: 200, description: 'Data user.', type: User })
-  @ApiResponse({ status: 404, description: 'User tidak ditemukan.' })
+  @ApiOperation({ summary: 'Get a user by ID' })
+  @ApiResponse({ status: 200, description: 'User data.', type: User })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   findOne(@Param('id', ParseUUIDPipe) id: string): Promise<User> {
+    this.logger.log(`[GET /users/${id}] Request received to get user`);
     return this.usersService.findOne(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Memperbarui data user berdasarkan ID' })
+  @ApiOperation({ summary: 'Update a user by ID' })
   @ApiBody({ type: UpdateUserDto })
   @ApiResponse({
     status: 200,
-    description: 'User berhasil diperbarui.',
+    description: 'User updated successfully.',
     type: User,
   })
-  @ApiResponse({ status: 404, description: 'User tidak ditemukan.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<User> {
+    this.logger.log(`[PATCH /users/${id}] Request received to update user`);
     return this.usersService.update(id, updateUserDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Menghapus user berdasarkan ID' })
-  @ApiResponse({ status: 204, description: 'User berhasil dihapus.' })
-  @ApiResponse({ status: 404, description: 'User tidak ditemukan.' })
+  @ApiOperation({ summary: 'Delete a user by ID' })
+  @ApiResponse({ status: 204, description: 'User deleted successfully.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    this.logger.log(`[DELETE /users/${id}] Request received to delete user`);
     return this.usersService.remove(id);
   }
 }
