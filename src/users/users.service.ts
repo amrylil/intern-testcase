@@ -1,3 +1,4 @@
+// src/users/users.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -10,6 +11,11 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import {
+  PaginatedResponse,
+  PaginationMeta,
+} from '../common/interfaces/pagination.interface';
+import { PaginationQueryDto } from 'src/common/dtos/pagination-query.dto';
 
 @Injectable()
 export class UsersService {
@@ -41,7 +47,6 @@ export class UsersService {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
 
-    // Create and save user
     const newUser = this.usersRepository.create({
       ...createUserDto,
       password: hashedPassword,
@@ -57,9 +62,35 @@ export class UsersService {
     }
   }
 
-  async findAll(): Promise<User[]> {
-    this.logger.log('Fetching all users');
-    return this.usersRepository.find();
+  async findAll(query: PaginationQueryDto): Promise<PaginatedResponse<User>> {
+    this.logger.log(
+      `Fetching all users with pagination: Page ${query.page}, Limit ${query.limit}`,
+    );
+
+    const { page, limit } = query;
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await this.usersRepository.findAndCount({
+      take: limit,
+      skip: skip,
+      order: {
+        username: 'ASC',
+      },
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    const meta: PaginationMeta = {
+      total: total,
+      page: page,
+      limit: limit,
+      totalPages: totalPages,
+    };
+
+    return {
+      data: users,
+      meta: meta,
+    };
   }
 
   async findOne(id: string): Promise<User> {

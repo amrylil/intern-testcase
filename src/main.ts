@@ -11,7 +11,7 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   const port = process.env.PORT || 3000;
-  const baseUrl = process.env.BASE_URL;
+  const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
   const swaggerPath = 'api-docs';
 
   app.useGlobalPipes(new ValidationPipe());
