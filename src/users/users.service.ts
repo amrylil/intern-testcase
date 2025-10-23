@@ -1,4 +1,3 @@
-// src/users/users.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -104,6 +103,23 @@ export class UsersService {
 
     this.logger.log(`User with ID ${id} found`);
     return user;
+  }
+
+  async findOneByUsernameForAuth(username: string): Promise<User | undefined> {
+    this.logger.log(`Fetching user by username for auth: ${username}`);
+
+    const result = await this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.username = :username', { username })
+      .addSelect('user.password')
+      .getOne();
+
+    if (!result) {
+      this.logger.warn(`User not found for username: ${username}`);
+      throw new NotFoundException(`User with username "${username}" not found`);
+    }
+
+    return result;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {

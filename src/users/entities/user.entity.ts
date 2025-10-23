@@ -1,4 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { UserSession } from './user-session.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity('users')
 export class User {
@@ -9,6 +11,7 @@ export class User {
   username: string;
 
   @Column({ select: false })
+  @Exclude()
   password: string;
 
   @Column({ unique: true })
@@ -16,4 +19,7 @@ export class User {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @OneToMany(() => UserSession, (session) => session.user)
+  sessions: UserSession[];
 }
