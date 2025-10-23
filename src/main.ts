@@ -1,8 +1,14 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import {
+  ValidationPipe,
+  Logger,
+  ClassSerializerInterceptor,
+} from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   dotenv.config();
@@ -14,7 +20,20 @@ async function bootstrap() {
   const baseUrl = process.env.BASE_URL || `http://localhost:${port}`;
   const swaggerPath = 'api-docs';
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
+
+  const reflector = app.get(Reflector);
+  app.useGlobalInterceptors(new ResponseInterceptor(reflector));
+
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(reflector));
+
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   app.setGlobalPrefix('api/v1', {
     exclude: [swaggerPath],
@@ -26,6 +45,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('users')
     .addTag('auth')
+    .addTag('posts')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
