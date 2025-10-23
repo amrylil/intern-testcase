@@ -51,28 +51,26 @@ export class AuthService {
 
     const payload = { sub: user.id, username: user.username };
 
-    const accessExpires = parseInt(process.env.JWT_EXPIRATION_TIME!, 10) || 900;
-
-    const refreshExpires =
-      parseInt(process.env.JWT_REFRESH_EXPIRATION_TIME!, 10) || 604800;
+    const accessExpires: string = process.env.JWT_EXPIRATION_TIME ?? '15m';
+    const refreshExpires: string =
+      process.env.JWT_REFRESH_EXPIRATION_TIME ?? '7d';
 
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET,
-      expiresIn: accessExpires,
+      expiresIn: accessExpires as any,
     });
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_REFRESH_SECRET,
-      expiresIn: refreshExpires,
+      expiresIn: refreshExpires as any,
     });
 
     const hashedRefresh = await bcrypt.hash(refreshToken, 10);
 
-    const expiresAt = new Date(Date.now() + refreshExpires * 1000);
-
     const session = this.sessionsRepo.create({
       refreshToken: hashedRefresh,
-      expiresAt: expiresAt,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+
       user,
     });
 
@@ -96,7 +94,7 @@ export class AuthService {
     return {
       user: userData,
       access_token: accessToken,
-      access_token_expires_in: accessExpires + 'm',
+      access_token_expires_in: accessExpires,
       refresh_token: refreshToken,
     };
   }
