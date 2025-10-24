@@ -102,6 +102,17 @@ Server akan berjalan di `http://localhost:3000`
 
 ---
 
+## 🔑 Default Admin Account
+
+Untuk testing, gunakan akun admin berikut:
+
+```
+Username: admin
+Password: admin123
+```
+
+---
+
 ## 🧪 Testing Token API
 
 Untuk menjalankan End-to-End Testing (termasuk pengujian token JWT):
