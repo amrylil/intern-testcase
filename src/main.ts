@@ -40,8 +40,8 @@ async function bootstrap() {
   });
 
   const config = new DocumentBuilder()
-    .setTitle('Your API Title')
-    .setDescription('API documentation for XYZ project')
+    .setTitle('Intern TestCase API')
+    .setDescription('API documentation for Intern TestCase project')
     .setVersion('1.0')
     .addTag('users')
     .addTag('auth')

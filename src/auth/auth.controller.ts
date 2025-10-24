@@ -21,6 +21,10 @@ import {
 } from '@nestjs/swagger';
 import { ResponseMessage } from '../common/decorators/response-message.decorator';
 import { UsersService } from 'src/users/users.service';
+import {
+  CreateUserDto,
+  CreateUserOnlyDto,
+} from 'src/users/dto/create-user.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -52,6 +56,23 @@ export class AuthController {
     return this.authService.login(user);
   }
 
+  @Post('register')
+  @ResponseMessage('User created successfully')
+  @ApiOperation({ summary: 'Create a new user' })
+  @ApiBody({ type: CreateUserOnlyDto })
+  @ApiResponse({ status: 201, description: 'User created successfully.' })
+  @ApiResponse({ status: 400, description: 'Invalid input.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Email or username already exists.',
+  })
+  create(@Body() createUserDto: CreateUserOnlyDto) {
+    this.logger.log(
+      `[POST /users] Request received to create user: ${createUserDto.email}`,
+    );
+    return this.userService.createUserOnly(createUserDto);
+  }
+
   @UseGuards(JwtRefreshGuard)
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
@@ -80,9 +101,9 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async logout(@Request() req) {
     this.logger.log(
-      `[POST /auth/logout] Request received for user ID: ${req.user.sub}`,
+      `[POST /auth/logout] Request received for user ID: ${req.user.userId}`,
     );
-    return this.authService.logout(req.user.sub);
+    return this.authService.logout(req.user.userId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -94,8 +115,8 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   getProfile(@Request() req) {
     this.logger.log(
-      `[GET /auth/profile] Request received for user ID: ${req.user.sub}`,
+      `[GET /auth/profile] Request received for user ID: ${req.user.userId}`,
     );
-    return this.userService.findOne(req.user.sub);
+    return this.userService.findOne(req.user.userId);
   }
 }

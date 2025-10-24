@@ -3,6 +3,11 @@ import { UserSession } from './user-session.entity';
 import { Exclude } from 'class-transformer';
 import { Post } from 'src/posts/entities/post.entity';
 
+export enum UserRole {
+  ADMIN = 'admin',
+  AUTHOR = 'author',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -20,6 +25,13 @@ export class User {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    default: UserRole.AUTHOR,
+  })
+  role: UserRole;
 
   @OneToMany(() => UserSession, (session) => session.user)
   sessions: UserSession[];

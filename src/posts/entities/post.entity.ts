@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 @Entity('posts')
@@ -27,6 +28,9 @@ export class Post {
 
   @ManyToOne(() => User, (user) => user.posts, {
     onDelete: 'CASCADE',
+    eager: false,
+    nullable: false,
   })
+  @JoinColumn({ name: 'author_id' })
   author: User;
 }

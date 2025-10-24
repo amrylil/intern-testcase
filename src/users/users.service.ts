@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto, CreateUserOnlyDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
@@ -26,6 +26,42 @@ export class UsersService {
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
+    this.logger.log(`Attempting to create user: ${createUserDto.email}`);
+
+    const existingUser = await this.usersRepository.findOne({
+      where: [
+        { email: createUserDto.email },
+        { username: createUserDto.username },
+      ],
+    });
+
+    if (existingUser) {
+      this.logger.warn(
+        `Email ${createUserDto.email} or username ${createUserDto.username} already exists.`,
+      );
+      throw new ConflictException('Email or username already exists');
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
+
+    const newUser = this.usersRepository.create({
+      ...createUserDto,
+      password: hashedPassword,
+    });
+
+    try {
+      const savedUser = await this.usersRepository.save(newUser);
+      this.logger.log(`User created successfully with ID: ${savedUser.id}`);
+      return savedUser;
+    } catch (error) {
+      this.logger.error('Failed to save new user to database', error.stack);
+      throw error;
+    }
+  }
+
+  async createUserOnly(createUserDto: CreateUserOnlyDto): Promise<User> {
     this.logger.log(`Attempting to create user: ${createUserDto.email}`);
 
     const existingUser = await this.usersRepository.findOne({

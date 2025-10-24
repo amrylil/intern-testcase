@@ -9,6 +9,11 @@ import { Repository } from 'typeorm';
 import { Post } from './entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { PaginationQueryDto } from 'src/common/dtos/pagination-query.dto';
+import {
+  PaginatedResponse,
+  PaginationMeta,
+} from 'src/common/interfaces/pagination.interface';
 
 @Injectable()
 export class PostsService {
@@ -19,29 +24,28 @@ export class PostsService {
     private postsRepository: Repository<Post>,
   ) {}
 
-  /**
-   * Membuat post baru
-   * @param createPostDto Data post baru
-   * @param userId ID user yang sedang login (dari token)
-   */
   async create(createPostDto: CreatePostDto, userId: string): Promise<Post> {
     this.logger.log(`User ${userId} creating a new post`);
 
     const newPost = this.postsRepository.create({
       ...createPostDto,
-      author: { id: userId }, // Menghubungkan post dengan user
+      author: { id: userId },
     });
 
     return this.postsRepository.save(newPost);
   }
 
-  /**
-   * Menampilkan semua post (Publik)
-   * Memuat relasi 'author' tetapi hanya memilih field yang aman
-   */
-  async findAll(): Promise<Post[]> {
-    this.logger.log('Fetching all posts');
-    return this.postsRepository.find({
+  async findAll(query: PaginationQueryDto): Promise<PaginatedResponse<Post>> {
+    this.logger.log(
+      `Fetching all posts with pagination: Page ${query.page}, Limit ${query.limit}`,
+    );
+
+    const { page, limit } = query;
+    const skip = (page - 1) * limit;
+
+    const [posts, total] = await this.postsRepository.findAndCount({
+      take: limit,
+      skip: skip,
       relations: ['author'],
       select: {
         id: true,
@@ -50,23 +54,34 @@ export class PostsService {
         createdAt: true,
         author: {
           id: true,
-          username: true, // Hanya tampilkan username author
+          username: true,
         },
       },
       order: { createdAt: 'DESC' },
     });
+
+    const totalPages = Math.ceil(total / limit);
+
+    const meta: PaginationMeta = {
+      total: total,
+      page: page,
+      limit: limit,
+      totalPages: totalPages,
+    };
+
+    return {
+      data: posts,
+      meta: meta,
+    };
   }
 
-  /**
-   * Menampilkan satu post (Publik)
-   */
   async findOne(id: string): Promise<Post> {
     this.logger.log(`Fetching post ${id}`);
     const post = await this.postsRepository.findOne({
       where: { id },
       relations: ['author'],
       select: {
-        author: { id: true, username: true }, // Hanya tampilkan data author yg aman
+        author: { id: true, username: true },
       },
     });
 
@@ -77,12 +92,6 @@ export class PostsService {
     return post;
   }
 
-  /**
-   * Memperbarui post
-   * @param id ID Post
-   * @param updatePostDto Data update
-   * @param userId ID user yang sedang login
-   */
   async update(
     id: string,
     updatePostDto: UpdatePostDto,
@@ -90,7 +99,6 @@ export class PostsService {
   ): Promise<Post> {
     this.logger.log(`User ${userId} attempting to update post ${id}`);
 
-    // Temukan post, pastikan relasi author di-load
     const post = await this.postsRepository.findOne({
       where: { id },
       relations: ['author'],
@@ -101,27 +109,19 @@ export class PostsService {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
 
-    // --- LOGIKA OTORISASI ---
-    // Cek apakah user yang login adalah pemilik post
-    if (post.author.id !== userId) {
+    if (!post.author || post.author.id !== userId) {
       this.logger.warn(
-        `User ${userId} failed to update post ${id}: Not the author`,
+        `User ${userId} failed action on post ${id}: Not the author or post has no author`,
       );
-      throw new ForbiddenException('You are not allowed to update this post');
+      throw new ForbiddenException(
+        'You are not allowed to perform this action',
+      );
     }
-    // --- AKHIR LOGIKA OTORISASI ---
-
-    // Gabungkan data lama dengan data baru
     Object.assign(post, updatePostDto);
 
     return this.postsRepository.save(post);
   }
 
-  /**
-   * Menghapus post
-   * @param id ID Post
-   * @param userId ID user yang sedang login
-   */
   async remove(id: string, userId: string): Promise<void> {
     this.logger.log(`User ${userId} attempting to delete post ${id}`);
 
@@ -134,16 +134,14 @@ export class PostsService {
       this.logger.warn(`Delete failed: Post ${id} not found`);
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
-
-    // --- LOGIKA OTORISASI ---
-    // Cek apakah user yang login adalah pemilik post
-    if (post.author.id !== userId) {
+    if (!post.author || post.author.id !== userId) {
       this.logger.warn(
-        `User ${userId} failed to delete post ${id}: Not the author`,
+        `User ${userId} failed action on post ${id}: Not the author or post has no author`,
       );
-      throw new ForbiddenException('You are not allowed to delete this post');
+      throw new ForbiddenException(
+        'You are not allowed to perform this action',
+      );
     }
-    // --- AKHIR LOGIKA OTORISASI ---
 
     await this.postsRepository.remove(post);
     this.logger.log(`Post ${id} deleted successfully by user ${userId}`);

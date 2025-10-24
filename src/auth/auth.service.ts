@@ -49,7 +49,7 @@ export class AuthService {
       `Attempting login for user ID: ${user.id} (${user.username})`,
     );
 
-    const payload = { sub: user.id, username: user.username };
+    const payload = { sub: user.id, username: user.username, role: user.role };
 
     const accessExpires: string = process.env.JWT_EXPIRATION_TIME ?? '15m';
     const refreshExpires: string =

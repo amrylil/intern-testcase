@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,9 +22,14 @@ import {
   ApiResponse,
   ApiBody,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { ResponseMessage } from '../common/decorators/response-message.decorator';
 import { PaginationQueryDto } from 'src/common/dtos/pagination-query.dto';
+import { Roles } from 'src/common/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { UserRole } from './entities/user.entity';
 
 @ApiTags('users')
 @Controller('users')
@@ -32,6 +38,9 @@ export class UsersController {
 
   constructor(private readonly usersService: UsersService) {}
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
   @Post()
   @ResponseMessage('User created successfully')
   @ApiOperation({ summary: 'Create a new user' })
@@ -49,6 +58,9 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
   @Get()
   @ResponseMessage('All users fetched successfully')
   @ApiOperation({ summary: 'Get all users (with pagination)' })
@@ -70,6 +82,9 @@ export class UsersController {
     return this.usersService.findAll(paginationQuery);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
   @Get(':id')
   @ResponseMessage('User fetched successfully')
   @ApiOperation({ summary: 'Get a user by ID' })
@@ -80,6 +95,9 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
   @Patch(':id')
   @ResponseMessage('User updated successfully')
   @ApiOperation({ summary: 'Update a user by ID' })
@@ -94,6 +112,9 @@ export class UsersController {
     return this.usersService.update(id, updateUserDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ResponseMessage('User deleted successfully')

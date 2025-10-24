@@ -18,5 +18,6 @@ import { UserSession } from 'src/users/entities/user-session.entity';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
+  exports: [AuthService, JwtStrategy, JwtRefreshStrategy, PassportModule],
 })
 export class AuthModule {}
