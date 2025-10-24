@@ -100,6 +100,8 @@ npm run start:dev
 
 Server akan berjalan di `http://localhost:3000`
 
+Swagger docs: `http://localhost:3000/api-docs`
+
 ---
 
 ## 🔑 Default Admin Account
