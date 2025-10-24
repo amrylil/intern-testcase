@@ -17,7 +17,7 @@ Saya menggunakan kombinasi **Layered Architecture** dan **Clean Architecture pri
 
 ### Saya memilih pattern ini karena:
 
-✅ Sudah terbiasa menggunakan layered & clean architecture di berbagai project  
+✅ Sudah terbiasa dan memahami menggunakan layered & clean architecture di beberapa project  
 ✅ Struktur bawaan NestJS yang modular dan clean sangat cocok dengan pola tersebut  
 ✅ Memudahkan pengembangan, testing, serta ekspansi ke skala besar atau microservice di masa depan
 
@@ -47,8 +47,8 @@ Project ini menggunakan PostgreSQL dengan 3 tabel utama:
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/username/intern-test-case.git
-cd intern-test-case
+git clone https://github.com/amrylil/intern-testcase
+cd intern-testcase
 ```
 
 ### 2. Install Dependencies
